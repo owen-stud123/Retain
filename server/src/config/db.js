@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Category from '../models/Category.js';
 
 export async function connectDB() {
   const mongoUri = process.env.MONGO_URI;
@@ -8,5 +9,10 @@ export async function connectDB() {
   }
 
   await mongoose.connect(mongoUri);
+  await Category.updateOne(
+    { name: 'Uncategorized' },
+    { $setOnInsert: { name: 'Uncategorized', isDefault: true } },
+    { upsert: true, collation: { locale: 'en', strength: 2 } }
+  );
   console.log('MongoDB connected');
 }
