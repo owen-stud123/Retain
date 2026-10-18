@@ -1,8 +1,20 @@
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
+import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthCard from '../components/common/AuthCard';
 import { useAuth } from '../context/AuthContext';
+
+function getLoginErrorMessage(requestError: unknown) {
+  if (isAxiosError(requestError) && requestError.response) {
+    const { status, data } = requestError.response;
+    if (status === 401) return 'Invalid email or password.';
+    if (status >= 500) return 'Something went wrong on the server. Please try again.';
+    return data?.message || 'Unable to sign in.';
+  }
+  // The API client throws a plain error when no response arrives (network failure or timeout).
+  return 'We could not reach the server. It may be waking up, so wait a moment and try again.';
+}
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -21,7 +33,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate((location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/', { replace: true });
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Unable to sign in');
+      setError(getLoginErrorMessage(requestError));
     } finally {
       setSubmitting(false);
     }
