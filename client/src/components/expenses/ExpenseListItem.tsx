@@ -10,7 +10,7 @@ export default function ExpenseListItem({ expense }: { expense: Expense }) {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' } }}>
           <Stack spacing={0.5}>
             <Typography variant="h6">{expense.title}</Typography>
-            <Typography color="text.secondary">{expense.category.name} · {expense.paymentMethod.replace('_', ' ')}</Typography>
+            <Typography color="text.secondary">{expense.category.name} · {expense.paymentMethod.replaceAll('_', ' ')}</Typography>
             <Typography variant="body2" color="text.secondary">{formatDate(expense.date)}</Typography>
           </Stack>
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>

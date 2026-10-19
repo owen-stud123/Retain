@@ -50,7 +50,7 @@ async function seed() {
     categoryNames.map((name) => Category.findOneAndUpdate(
       { name },
       { $setOnInsert: { name, isDefault: false } },
-      { new: true, upsert: true, collation: { locale: 'en', strength: 2 } }
+      { returnDocument: 'after', upsert: true, collation: { locale: 'en', strength: 2 } }
     ))
   );
   const uncategorized = await Category.findOne({ isDefault: true });
@@ -71,7 +71,7 @@ async function seed() {
   await Budget.findOneAndUpdate(
     { user: demoUser._id, month: getCurrentMonth() },
     { amount: 2500 },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, returnDocument: 'after', runValidators: true }
   );
 
   console.log(`Seeded admin ${admin.email}, demo user ${demoEmail}, and ${expenses.length} expenses`);

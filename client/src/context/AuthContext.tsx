@@ -1,6 +1,9 @@
 import { isAxiosError } from 'axios';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { getMe, getUserFromStorage, login as loginRequest, signup as signupRequest } from '../api/auth';
+import { clearExpenses } from '../store/expensesSlice';
+import { resetFilters } from '../store/filtersSlice';
+import { useAppDispatch } from '../store/hooks';
 import type { User } from '../types';
 
 // 'checking'   - a saved token exists and the server has not confirmed it yet
@@ -38,6 +41,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Increases on every session change (check, login, signup, logout). A response from an older
   // version is ignored, so a slow check can't restore a signed-out session or overwrite a newer one.
   const sessionVersion = useRef(0);
+  const dispatch = useAppDispatch();
+  const userId = user?.id ?? null;
+
+  // Expense data lives in Redux, outside this context. When the signed-in user changes
+  // (sign-out, expired session, or another account), drop the previous user's list and filters
+  // so they are never shown to the next person using this browser tab.
+  useEffect(() => {
+    dispatch(clearExpenses());
+    dispatch(resetFilters());
+  }, [dispatch, userId]);
 
   const checkSession = useCallback(async () => {
     const version = ++sessionVersion.current;

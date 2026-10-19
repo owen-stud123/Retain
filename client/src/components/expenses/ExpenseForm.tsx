@@ -1,7 +1,7 @@
 import { Alert, Button, MenuItem, Stack, TextField } from '@mui/material';
 import { useState } from 'react';
 import type { Category, Expense, ExpenseInput, PaymentMethod } from '../../types';
-import { dateInputToUtc, toDateInputValue } from '../../utils/format';
+import { dateInputToUtc, toDateInputValue, todayInputValue } from '../../utils/format';
 
 const methods: Array<{ value: PaymentMethod; label: string }> = [
   { value: 'cash', label: 'Cash' },
@@ -22,7 +22,7 @@ export default function ExpenseForm({ categories, expense, onSubmit, onCancel }:
   const [title, setTitle] = useState(expense?.title || '');
   const [amount, setAmount] = useState(expense ? String(expense.amount) : '');
   const [category, setCategory] = useState(expense?.category._id || '');
-  const [date, setDate] = useState(expense ? toDateInputValue(expense.date) : new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(expense ? toDateInputValue(expense.date) : todayInputValue());
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(expense?.paymentMethod || 'cash');
   const [notes, setNotes] = useState(expense?.notes || '');
   const [error, setError] = useState('');
@@ -34,10 +34,14 @@ export default function ExpenseForm({ categories, expense, onSubmit, onCancel }:
       setError('Choose a category.');
       return;
     }
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+      setError('Enter an amount greater than 0.');
+      return;
+    }
     setError('');
     setSubmitting(true);
     try {
-      await onSubmit({ title: title.trim(), amount: Number(amount), category, date: dateInputToUtc(date), paymentMethod, notes: notes.trim() || undefined });
+      await onSubmit({ title: title.trim(), amount: Number(amount), category, date: dateInputToUtc(date), paymentMethod, notes: expense ? notes.trim() : notes.trim() || undefined });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Unable to save expense');
     } finally {
@@ -57,7 +61,7 @@ export default function ExpenseForm({ categories, expense, onSubmit, onCancel }:
       <TextField select label="Payment method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)} required>
         {methods.map((method) => <MenuItem key={method.value} value={method.value}>{method.label}</MenuItem>)}
       </TextField>
-      <TextField label="Notes" value={notes} onChange={(event) => setNotes(event.target.value)} multiline minRows={3} />
+      <TextField label="Notes" value={notes} onChange={(event) => setNotes(event.target.value)} multiline minRows={3} slotProps={{ htmlInput: { maxLength: 1000 } }} />
       <Stack direction="row" spacing={2}>
         {onCancel && <Button onClick={onCancel} disabled={submitting}>Cancel</Button>}
         <Button type="submit" variant="contained" disabled={submitting}>{submitting ? 'Saving...' : expense ? 'Update expense' : 'Add expense'}</Button>

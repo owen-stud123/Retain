@@ -18,3 +18,16 @@ export function toDateInputValue(value: string) {
 export function dateInputToUtc(value: string) {
   return new Date(`${value}T00:00:00.000Z`).toISOString();
 }
+
+// Today's date and month in the user's own time zone (toISOString() would use UTC, which is
+// the previous day between midnight and 02:00 in Kigali).
+export function todayInputValue() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+export function currentMonthValue() {
+  return todayInputValue().slice(0, 7);
+}

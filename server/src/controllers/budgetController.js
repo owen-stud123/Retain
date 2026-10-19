@@ -1,6 +1,7 @@
 import Expense from '../models/Expense.js';
 import Budget from '../models/Budget.js';
 import { formatBudgetResponse } from '../utils/budget.js';
+import { parseNumber } from '../utils/validation.js';
 import { getCurrentMonth, getMonthDateRange, isValidMonth } from '../utils/month.js';
 
 function ensureMonth(month) {
@@ -31,7 +32,7 @@ export async function getBudget(req, res) {
 export async function upsertBudget(req, res) {
   const { month } = req.params;
   ensureMonth(month);
-  const amount = Number(req.body.amount);
+  const amount = parseNumber(req.body?.amount);
 
   if (!Number.isFinite(amount) || amount < 0) {
     const error = new Error('Budget amount must be zero or greater');
@@ -42,7 +43,7 @@ export async function upsertBudget(req, res) {
   const budget = await Budget.findOneAndUpdate(
     { user: req.user._id, month },
     { amount },
-    { new: true, upsert: true, runValidators: true }
+    { returnDocument: 'after', upsert: true, runValidators: true }
   );
   const spent = await getSpent(req.user._id, month);
   res.json(formatBudgetResponse(month, budget.amount, spent));

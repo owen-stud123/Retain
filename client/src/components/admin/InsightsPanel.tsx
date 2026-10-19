@@ -23,19 +23,12 @@ export default function InsightsPanel() {
         <InsightCard label="Users" value={insights.totalUsers.toString()} />
         <InsightCard label="All expenses" value={insights.totalExpenses.toString()} />
         <InsightCard label="Expense value" value={formatCurrency(insights.totalExpenseValue)} />
-        <InsightCard label="This month" value={insights.expensesThisMonth.toString()} />
+        <InsightCard label="Expenses this month" value={insights.expensesThisMonth.toString()} />
       </Stack>
-      <Paper variant="outlined" sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>Top categories</Typography>
-        <Stack spacing={1}>
-          {insights.topCategories.length === 0 ? <Typography color="text.secondary">No category activity yet.</Typography> : insights.topCategories.map((category) => (
-            <Stack key={category.categoryId} direction="row" sx={{ justifyContent: 'space-between' }}>
-              <Typography>{category.name} <Typography component="span" variant="caption" color="text.secondary">({category.count})</Typography></Typography>
-              <Typography sx={{ fontWeight: 600 }}>{formatCurrency(category.total)}</Typography>
-            </Stack>
-          ))}
-        </Stack>
-      </Paper>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <CategoryList title="Most used categories" categories={insights.topCategories} />
+        <CategoryList title="Least used categories" categories={insights.bottomCategories} />
+      </Stack>
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>Recent users</Typography>
         <Stack spacing={1}>
@@ -51,6 +44,22 @@ export default function InsightsPanel() {
         </Stack>
       </Paper>
     </Stack>
+  );
+}
+
+function CategoryList({ title, categories }: { title: string; categories: AdminInsights['topCategories'] }) {
+  return (
+    <Paper variant="outlined" sx={{ p: 3, flex: 1 }}>
+      <Typography variant="h6" gutterBottom>{title}</Typography>
+      <Stack spacing={1}>
+        {categories.length === 0 ? <Typography color="text.secondary">No categories yet.</Typography> : categories.map((category) => (
+          <Stack key={category.categoryId} direction="row" sx={{ justifyContent: 'space-between' }}>
+            <Typography>{category.name} <Typography component="span" variant="caption" color="text.secondary">({category.count} {category.count === 1 ? 'expense' : 'expenses'})</Typography></Typography>
+            <Typography sx={{ fontWeight: 600 }}>{formatCurrency(category.total)}</Typography>
+          </Stack>
+        ))}
+      </Stack>
+    </Paper>
   );
 }
 

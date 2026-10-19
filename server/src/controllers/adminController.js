@@ -11,7 +11,8 @@ export async function getInsights(req, res) {
     Expense.aggregate([
       { $group: { _id: null, totalExpenses: { $sum: 1 }, totalExpenseValue: { $sum: '$amount' } } }
     ]),
-    Expense.countDocuments({ createdAt: { $gte: start, $lt: end } }),
+    // Counts expenses dated this month, matching how the user dashboard defines a month.
+    Expense.countDocuments({ date: { $gte: start, $lt: end } }),
     Expense.aggregate([
       { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
       { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } },

@@ -1,5 +1,9 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { httpError, isNonEmptyString, isValidEmail } from '../utils/validation.js';
+
+const MAX_NAME_LENGTH = 80;
+const MAX_PASSWORD_LENGTH = 128;
 
 function serializeUser(user) {
   return {
@@ -25,16 +29,20 @@ function createToken(userId) {
 export async function signup(req, res) {
   const { name, email, password } = req.body;
 
-  if (!name?.trim() || !email?.trim() || !password) {
-    const error = new Error('Name, email and password are required');
-    error.statusCode = 400;
-    throw error;
+  if (!isNonEmptyString(name) || !isNonEmptyString(email) || typeof password !== 'string' || !password) {
+    throw httpError('Name, email and password are required');
   }
 
-  if (password.length < 8) {
-    const error = new Error('Password must be at least 8 characters');
-    error.statusCode = 400;
-    throw error;
+  if (name.trim().length > MAX_NAME_LENGTH) {
+    throw httpError(`Name must be ${MAX_NAME_LENGTH} characters or fewer`);
+  }
+
+  if (!isValidEmail(email)) {
+    throw httpError('Enter a valid email address');
+  }
+
+  if (password.length < 8 || password.length > MAX_PASSWORD_LENGTH) {
+    throw httpError(`Password must be between 8 and ${MAX_PASSWORD_LENGTH} characters`);
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -61,10 +69,8 @@ export async function signup(req, res) {
 export async function login(req, res) {
   const { email, password } = req.body;
 
-  if (!email?.trim() || !password) {
-    const error = new Error('Email and password are required');
-    error.statusCode = 400;
-    throw error;
+  if (!isNonEmptyString(email) || typeof password !== 'string' || !password) {
+    throw httpError('Email and password are required');
   }
 
   const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');

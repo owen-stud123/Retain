@@ -7,6 +7,7 @@ import Toast from '../components/common/Toast';
 import ExpenseForm from '../components/expenses/ExpenseForm';
 import { useCategories } from '../hooks/useCategories';
 import type { Expense, ExpenseInput } from '../types';
+import { formatCurrency, formatDate } from '../utils/format';
 
 export default function ExpenseDetailPage() {
   const { id = '' } = useParams();
@@ -19,24 +20,28 @@ export default function ExpenseDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
-    async function load() {
-      try {
-        setExpense(await getExpense(id));
-      } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : 'Unable to load expense');
-      } finally {
-        setLoading(false);
-      }
-    }
-    void load();
+    let active = true;
+    setLoading(true);
+    setError('');
+    getExpense(id)
+      .then((data) => { if (active) setExpense(data); })
+      .catch((requestError: unknown) => {
+        if (active) setError(requestError instanceof Error ? requestError.message : 'Unable to load expense');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   async function handleUpdate(input: ExpenseInput) {
     const updated = await updateExpense(id, input);
     setExpense(updated);
     setEditing(false);
+    setToastSeverity('success');
     setToast('Expense updated.');
   }
 
@@ -46,12 +51,14 @@ export default function ExpenseDetailPage() {
       await deleteExpense(id);
       navigate('/expenses', { replace: true });
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Unable to delete expense');
+      setDeleteDialogOpen(false);
       setDeleting(false);
+      setToastSeverity('error');
+      setToast(requestError instanceof Error ? requestError.message : 'Unable to delete expense');
     }
   }
 
-  if (loading) return <CircularProgress />;
+  if (loading) return <Stack sx={{ alignItems: 'center', py: 8 }}><CircularProgress /></Stack>;
   if (error || !expense) return <Alert severity="error">{error || 'Expense not found.'}</Alert>;
 
   return (
@@ -63,9 +70,10 @@ export default function ExpenseDetailPage() {
         <Paper sx={{ p: 3 }}>
           <Stack spacing={1}>
             <Typography variant="h5">{expense.title}</Typography>
-            <Typography variant="h4">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(expense.amount)}</Typography>
+            <Typography variant="h4">{formatCurrency(expense.amount)}</Typography>
+            <Typography>Date: {formatDate(expense.date)}</Typography>
             <Typography>Category: {expense.category.name}</Typography>
-            <Typography>Payment method: {expense.paymentMethod.replace('_', ' ')}</Typography>
+            <Typography>Payment method: {expense.paymentMethod.replaceAll('_', ' ')}</Typography>
             {expense.notes && <Typography>Notes: {expense.notes}</Typography>}
           </Stack>
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
@@ -82,7 +90,7 @@ export default function ExpenseDetailPage() {
         onConfirm={() => void handleDelete()}
         confirming={deleting}
       />
-      <Toast message={toast} onClose={() => setToast('')} />
+      <Toast message={toast} severity={toastSeverity} onClose={() => setToast('')} />
     </Stack>
   );
 }

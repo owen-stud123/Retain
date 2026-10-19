@@ -8,14 +8,10 @@ import RecentExpenses from '../components/dashboard/RecentExpenses';
 import StatCard from '../components/dashboard/StatCard';
 import Toast from '../components/common/Toast';
 import type { DashboardData } from '../types';
-import { formatCurrency, formatDate } from '../utils/format';
-
-function currentMonth() {
-  return new Date().toISOString().slice(0, 7);
-}
+import { currentMonthValue, formatCurrency, formatDate } from '../utils/format';
 
 export default function DashboardPage() {
-  const [month, setMonth] = useState(currentMonth);
+  const [month, setMonth] = useState(currentMonthValue);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -63,7 +59,7 @@ export default function DashboardPage() {
           <Typography variant="overline" color="primary">Your money, in focus</Typography>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>Dashboard</Typography>
         </Stack>
-        <TextField label="Month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} size="small" slotProps={{ inputLabel: { shrink: true } }} />
+        <TextField label="Month" type="month" value={month} onChange={(event) => { if (event.target.value) setMonth(event.target.value); }} size="small" slotProps={{ inputLabel: { shrink: true } }} />
       </Stack>
       {error && <Alert severity="error">{error}</Alert>}
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

@@ -6,6 +6,9 @@ import type { RootState } from './index';
 interface ExpensesState extends ExpenseListResponse {
   loading: boolean;
   error: string | null;
+  // Id of the newest request. Responses from older requests (e.g. while the user is still
+  // typing a search) are ignored so they can't overwrite newer results.
+  latestRequestId: string | null;
 }
 
 const initialState: ExpensesState = {
@@ -15,12 +18,10 @@ const initialState: ExpensesState = {
   limit: 10,
   pages: 0,
   loading: false,
-  error: null
+  error: null,
+  latestRequestId: null
 };
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unable to load expenses';
-}
 
 export const fetchExpenses = createAsyncThunk<ExpenseListResponse, void, { state: RootState }>(
   'expenses/fetch',
@@ -44,17 +45,21 @@ const expensesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchExpenses.pending, (state) => {
+      .addCase(fetchExpenses.pending, (state, action) => {
+        state.latestRequestId = action.meta.requestId;
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchExpenses.fulfilled, (state, action) => {
-        state.loading = false;
-        Object.assign(state, action.payload);
+        if (action.meta.requestId !== state.latestRequestId) return;
+        const { items, total, page, limit, pages } = action.payload;
+        Object.assign(state, { items, total, page, limit, pages, loading: false });
       })
       .addCase(fetchExpenses.rejected, (state, action) => {
+        if (action.meta.requestId !== state.latestRequestId) return;
         state.loading = false;
-        state.error = getErrorMessage(action.error);
+        // action.error is a plain serialized object, not an Error instance.
+        state.error = action.error.message || 'Unable to load expenses';
       });
   }
 });
