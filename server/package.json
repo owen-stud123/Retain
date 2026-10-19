@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node -r ./test/dns-setup.cjs --test \"test/**/*.test.js\"",
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed": "node src/seed.js"
