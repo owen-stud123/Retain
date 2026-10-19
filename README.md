@@ -10,22 +10,22 @@ Retain is a personal expense tracker with monthly budgets, spending insights, an
 
 ## Prerequisites
 
-- Node.js 22 or newer (the test runner uses built-in glob support)
+- Node.js 22 or newer
 - npm
 - MongoDB running locally or a MongoDB connection string
 
-## Project structure
+## Project Structure
 
 ```text
 client/   React frontend
 server/   Express API and database models
 ```
 
-## Local setup
+## Local Setup
 
 ### 1. Configure the server
 
-Copy `server/.env.example` to `server/.env` and set values for your development environment:
+Copy `server/.env.example` to `server/.env` and configure your development environment.
 
 ```env
 PORT=5000
@@ -40,6 +40,8 @@ Never commit `.env` files or real credentials.
 
 ### 2. Install dependencies
 
+Run these commands from the project root in PowerShell:
+
 ```powershell
 Set-Location "server"
 npm install
@@ -50,7 +52,7 @@ npm install
 
 ### 3. Seed development data
 
-With the server environment configured:
+With the server environment configured, run:
 
 ```powershell
 Set-Location "server"
@@ -75,15 +77,15 @@ Set-Location "server"
 npm run dev
 ```
 
-The API runs on `http://127.0.0.1:5000`. Confirm it is available at:
+The API runs at `http://127.0.0.1:5000`.
 
-```text
-http://127.0.0.1:5000/api/health
-```
+Confirm it is available at:
+
+`http://127.0.0.1:5000/api/health`
 
 ### 5. Start the client
 
-In a second terminal:
+Open a second terminal from the project root and run:
 
 ```powershell
 Set-Location "client"
@@ -92,10 +94,10 @@ npm run dev
 
 Open the Vite URL, normally `http://127.0.0.1:5173`.
 
-## Available client routes
+## Available Client Routes
 
 | Route | Access | Purpose |
-| --- | --- | --- |
+|---|---|---|
 | `/login` | Public | Sign in |
 | `/signup` | Public | Create a user account |
 | `/` | Authenticated | Dashboard and monthly budget |
@@ -105,40 +107,77 @@ Open the Vite URL, normally `http://127.0.0.1:5173`.
 
 ## Features
 
-- **Accounts and roles** — sign up, sign in and sign out; JWT authentication with `user` and `admin` roles. Authentication state, role checks and protected routes live in React Context (`AuthContext`, `RequireAuth`, `RequireAdmin`). Sessions survive a page refresh and recover when the API is briefly unavailable (Retry / Sign out screen).
-- **Expenses** — create, view, edit and delete expenses with title, amount, category, date, payment method and notes. Every expense belongs to the signed-in user; other users' expenses cannot be read or changed.
-- **Search, filters and sorting (Redux)** — the expense list's search text, category, payment method, date range, amount range, sort field, sort order and page are kept in the Redux store (`filtersSlice`); the fetched list is kept in `expensesSlice`.
-- **Pagination** — 10 expenses per page, with page metadata (`total`, `page`, `pages`) from the API. Changing any filter returns to page 1.
-- **Monthly budget and dashboard** — set a budget per month and see total spent, remaining budget, percentage used, status (on track / approaching limit / over budget), highest expense, spending by category and recent expenses.
-- **Admin** — platform insights (users, expense count and value, expenses this month, most and least used categories, recent users) and category management (create, rename, delete). Deleting a category moves its expenses to the protected "Uncategorized" category.
+- **Accounts and roles:** Sign up, sign in, and sign out using JWT authentication with `user` and `admin` roles. React Context manages authentication state, role checks, and protected routes through `AuthContext`, `RequireAuth`, and `RequireAdmin`.
+- **Session handling:** Sessions survive page refreshes. If the API is temporarily unavailable, users can retry or sign out.
+- **Expense management:** Create, view, edit, and delete expenses with a title, amount, category, date, payment method, and optional notes. Users can access only their own expenses.
+- **Search, filters, and sorting:** Redux Toolkit manages expense search text, category, payment method, date range, amount range, sort field, sort order, and page through `filtersSlice`. Fetched expenses are managed by `expensesSlice`.
+- **Pagination:** Displays 10 expenses per page and uses API metadata such as `total`, `page`, and `pages`. Changing a filter returns the list to page 1.
+- **Monthly budgets and dashboard:** Set a budget for each month and view total spending, remaining budget, percentage used, budget status, highest expense, spending by category, and recent expenses.
+- **Admin area:** View platform insights, including user count, expense count and value, expenses this month, most and least used categories, and recent users.
+- **Category management:** Admins can create, rename, and delete categories. When a category is deleted, its expenses are moved to the protected `Uncategorized` category.
 
-## API reference
+## API Reference
 
-All routes except health, signup and login need an `Authorization: Bearer <token>` header. Errors are returned as `{ "message": "..." }` with a 4xx/5xx status.
+All routes except health, signup, and login require an `Authorization: Bearer <token>` header.
+
+Errors are returned as JSON with a message, for example:
+
+```json
+{
+  "message": "Error description"
+}
+```
 
 | Method | Route | Access | Description |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | GET | `/api/health` | Public | Health check |
 | POST | `/api/auth/signup` | Public | Create a user. Body: `name`, `email`, `password` (8+ characters) |
 | POST | `/api/auth/login` | Public | Sign in. Body: `email`, `password` |
 | GET | `/api/auth/me` | User | Confirm the session and return a refreshed token |
-| GET | `/api/expenses` | User | List own expenses. Query: `search`, `category`, `paymentMethod`, `startDate`, `endDate`, `minAmount`, `maxAmount`, `sortBy` (`date`/`amount`), `order` (`asc`/`desc`), `page`, `limit` (max 100) |
-| POST | `/api/expenses` | User | Create an expense. Body: `title`, `amount`, `category` (id), `date`, `paymentMethod` (`cash`, `card`, `bank_transfer`, `mobile_money`, `other`), optional `notes` |
+| GET | `/api/expenses` | User | List own expenses. Supports search, filters, sorting, and pagination |
+| POST | `/api/expenses` | User | Create an expense |
 | GET | `/api/expenses/:id` | Owner | Get one expense |
-| PUT | `/api/expenses/:id` | Owner | Update any expense fields |
+| PUT | `/api/expenses/:id` | Owner | Update an expense |
 | DELETE | `/api/expenses/:id` | Owner | Delete an expense |
-| GET | `/api/budgets/:month` | User | Budget summary for `YYYY-MM` |
+| GET | `/api/budgets/:month` | User | Get the budget summary for `YYYY-MM` |
 | PUT | `/api/budgets/:month` | User | Set the budget. Body: `amount` (0 or more) |
-| GET | `/api/dashboard?month=YYYY-MM` | User | Dashboard summary for a month (defaults to the current month) |
+| GET | `/api/dashboard?month=YYYY-MM` | User | Get the dashboard summary for a month; defaults to the current month |
 | GET | `/api/categories` | User | List categories |
 | POST | `/api/categories` | Admin | Create a category. Body: `name` |
 | PUT | `/api/categories/:id` | Admin | Rename a category |
-| DELETE | `/api/categories/:id` | Admin | Delete a category; its expenses move to Uncategorized |
-| GET | `/api/admin/insights` | Admin | Platform statistics |
+| DELETE | `/api/categories/:id` | Admin | Delete a category; its expenses move to `Uncategorized` |
+| GET | `/api/admin/insights` | Admin | Get platform statistics |
 
-## Validation and tests
+### Expense List Query Parameters
 
-Build and type-check the client:
+The `GET /api/expenses` endpoint supports:
+
+- `search`
+- `category`
+- `paymentMethod`
+- `startDate` and `endDate`
+- `minAmount` and `maxAmount`
+- `sortBy` (`date` or `amount`)
+- `order` (`asc` or `desc`)
+- `page`
+- `limit` (maximum 100)
+
+### Expense Creation Fields
+
+The `POST /api/expenses` endpoint accepts:
+
+- `title`
+- `amount`
+- `category` (category ID)
+- `date`
+- `paymentMethod` (`cash`, `card`, `bank_transfer`, `mobile_money`, or `other`)
+- `notes` (optional)
+
+## Validation and Tests
+
+### Client type-check and build
+
+Run:
 
 ```powershell
 Set-Location "client"
@@ -146,7 +185,13 @@ npx tsc --noEmit
 npm run build
 ```
 
-Run the API integration tests (27 tests covering authentication, ownership, validation, search, filters, sorting, pagination, budgets, the dashboard and admin authorization). They need a **disposable** MongoDB database whose name contains `test`; the suite deletes everything in it and refuses to run otherwise. Never point it at the production database.
+### API integration tests
+
+The integration suite contains 27 tests covering authentication, ownership, validation, search, filters, sorting, pagination, budgets, the dashboard, and admin authorization.
+
+The tests require a **disposable MongoDB database whose name contains `test`**. The suite deletes data in the selected test database and refuses to run if the database name does not meet the requirement. Never use your production database for testing.
+
+For a local MongoDB instance:
 
 ```powershell
 Set-Location "server"
@@ -156,58 +201,70 @@ npm test
 
 If `TEST_MONGO_URI` is not set, the tests are skipped.
 
-## Deployment (Render + MongoDB Atlas)
+## Deployment (Render and MongoDB Atlas)
 
-Retain is deployed as two Render services from this repository: the API as a **Web Service** and the client as a **Static Site**.
+Retain is deployed using two Render services connected to MongoDB Atlas:
+
+- API: Render Web Service
+- Client: Render Static Site
 
 ### API — Render Web Service
 
 | Setting | Value |
-| --- | --- |
+|---|---|
 | Root directory | `server` |
 | Build command | `npm install` |
 | Start command | `npm start` |
 | Health check path | `/api/health` |
 
-Environment variables (set in Render, never in the repository):
+Configure the following environment variables in Render. Do not commit production secrets to the repository.
 
 | Variable | Value |
-| --- | --- |
-| `MONGO_URI` | Atlas connection string, including the database name (e.g. `.../retain?retryWrites=true&w=majority`) |
-| `JWT_SECRET` | A long random string (different from development) |
-| `CLIENT_URL` | The static site's URL, e.g. `https://retain-client.onrender.com` (no trailing slash). Requests from any other origin are blocked by CORS. |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Only needed when running the seed script |
+|---|---|
+| `MONGO_URI` | MongoDB Atlas connection string, including the database name |
+| `JWT_SECRET` | A long, randomly generated secret |
+| `CLIENT_URL` | `https://retain-client-m0fw.onrender.com` |
+| `ADMIN_EMAIL` | Needed when running the seed script |
+| `ADMIN_PASSWORD` | Needed when running the seed script |
 
-Render sets `PORT` automatically. In MongoDB Atlas, **Network Access** must allow Render to connect (Render's free web services do not have fixed outbound IPs, so this usually means allowing `0.0.0.0/0`, protected by a strong database user password).
+Render sets `PORT` automatically.
+
+In MongoDB Atlas, configure **Network Access** to allow the Render service to connect. Render's free web services do not have fixed outbound IP addresses. If you allow `0.0.0.0/0`, protect the database with a strong password and appropriate database-user permissions.
 
 ### Client — Render Static Site
 
 | Setting | Value |
-| --- | --- |
+|---|---|
 | Root directory | `client` |
 | Build command | `npm install && npm run build` |
 | Publish directory | `dist` |
-| Environment variable | `VITE_API_URL` = the API URL plus `/api`, e.g. `https://retain-api.onrender.com/api` |
-| Redirects/Rewrites | Source `/*`, Destination `/index.html`, Action **Rewrite** |
+| Environment variable | `VITE_API_URL=https://retain-api-io2b.onrender.com/api` |
 
-`VITE_API_URL` is read at **build time**, so redeploy the static site after changing it. The rewrite rule is required so that refreshing `/expenses` or `/admin` loads the app instead of a 404.
+Configure the following rewrite rule for client-side routing:
 
-Free Render web services sleep when idle; the first request after a pause can take up to a minute. The client shows a "server could not be reached / Retry" message during that time.
+| Setting | Value |
+|---|---|
+| Source | `/*` |
+| Destination | `/index.html` |
+| Action | Rewrite |
 
-### Deployed URL
+### Deployed URLs
 
-- Client: _add the static site URL here_
-- API: _add the web service URL here_
+- **Client:** https://retain-client-m0fw.onrender.com
+- **API:** https://retain-api-io2b.onrender.com
+- **API health check:** https://retain-api-io2b.onrender.com/api/health
+
+Render free web services may sleep when idle. The first API request after a pause can take up to a minute. The client may show a connection error while the API starts; retry after a short wait.
 
 ## Troubleshooting
 
-### `querySrv ECONNREFUSED` / `querySrv ETIMEOUT` when the API starts locally
+### `querySrv ECONNREFUSED` or `querySrv ETIMEOUT`
 
-`mongodb+srv://` connection strings require a DNS **SRV** lookup. Some home, campus or mobile networks (and some Windows DNS settings) refuse SRV queries, so the API cannot find the Atlas cluster even though the connection string is correct. This is a problem with the local network, not with the application, and it does not affect Render.
+MongoDB Atlas `mongodb+srv://` connection strings require DNS SRV lookups. Some home, campus, mobile, or Windows network configurations can block these queries.
 
-Fix it on your machine with one of these:
+If the API cannot connect locally:
 
-1. Change your computer's DNS server (Windows: *Settings → Network & Internet → your connection → DNS server assignment → Edit*) to a public resolver such as `8.8.8.8` / `1.1.1.1`, then restart the terminal.
-2. Or use Atlas's standard connection string instead of the SRV one: in Atlas choose *Connect → Drivers*, pick an older driver version that shows a `mongodb://host1,host2,host3/...` string, and put that in `server/.env` as `MONGO_URI`.
+1. Try changing your computer's DNS resolver to a public resolver such as `8.8.8.8` or `1.1.1.1`, then restart the terminal.
+2. Alternatively, use an appropriate standard MongoDB connection string from Atlas instead of the SRV connection string, if one is available for your cluster.
 
-Avoid hardcoding DNS servers in the application code.
+Avoid hardcoding DNS server addresses in the application code.
